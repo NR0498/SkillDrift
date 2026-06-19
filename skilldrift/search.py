@@ -34,6 +34,26 @@ def _repair_text(value: Any) -> Any:
     return current
 
 
+def _normalize_solr_document(document: dict[str, Any]) -> dict[str, Any]:
+    item = dict(document)
+    for field in (
+        "title",
+        "company",
+        "tags",
+        "description",
+        "snapshot_date",
+        "source",
+        "source_url",
+    ):
+        value = item.get(field)
+        if isinstance(value, list):
+            value = value[0] if value else None
+        if field in {"title", "company", "tags", "description"}:
+            value = _repair_text(value)
+        item[field] = value
+    return item
+
+
 class SolrSearch:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()
@@ -108,7 +128,8 @@ class SolrSearch:
                 params={
                     "q": query,
                     "q.op": "AND",
-                    "df": "_text_",
+                    "defType": "edismax",
+                    "qf": "title^4 company^3 tags^2 description",
                     "rows": limit,
                     "wt": "json",
                     "fl": "id,title,company,tags,description,snapshot_date,source,source_url,score",
@@ -117,7 +138,10 @@ class SolrSearch:
             )
             response.raise_for_status()
             payload = response.json()["response"]
-            return {"total": payload["numFound"], "items": payload["docs"]}
+            return {
+                "total": payload["numFound"],
+                "items": [_normalize_solr_document(doc) for doc in payload["docs"]],
+            }
         except (requests.RequestException, KeyError, ValueError) as exc:
             logger.warning("Solr search failed; using database fallback: %s", exc)
             try:

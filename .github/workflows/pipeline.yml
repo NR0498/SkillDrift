@@ -35,5 +35,4 @@ jobs:
       - name: Index jobs in Solr
         run: python indexer.py
       - name: Compute and persist trends
-        run: python trend_engine.py
-
+        run: python trend_engine.py --skip-s3

@@ -1,13 +1,13 @@
 .vercel
 .env*
-.venv
+.venv*
 .tools
 __pycache__
 **/__pycache__
 .pytest_cache
 .ruff_cache
+data
+deploy
 output
 spark.err.txt
 spark.out.txt
-!data/jobs.db
-!data/trends.db
