@@ -15,11 +15,18 @@ logger = logging.getLogger(__name__)
 
 def upload_run_summary(summary: dict[str, Any], settings: Settings | None = None) -> str | None:
     settings = settings or get_settings()
-    client = boto3.client(
-        "s3",
-        endpoint_url=settings.aws_endpoint_url,
-        region_name=settings.aws_region,
-    )
+    client_kwargs: dict[str, Any] = {
+        "region_name": settings.aws_region,
+    }
+    if settings.aws_endpoint_url:
+        client_kwargs["endpoint_url"] = settings.aws_endpoint_url
+    if settings.aws_access_key_id and settings.aws_secret_access_key:
+        client_kwargs["aws_access_key_id"] = settings.aws_access_key_id
+        client_kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+    if settings.aws_session_token:
+        client_kwargs["aws_session_token"] = settings.aws_session_token
+
+    client = boto3.client("s3", **client_kwargs)
     try:
         client.head_bucket(Bucket=settings.s3_bucket)
     except ClientError:

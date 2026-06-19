@@ -57,9 +57,14 @@ def _sqlite_url(path: Path) -> URL:
 
 
 def create_db_engine(url: str | URL) -> Engine:
-    kwargs: dict = {"pool_pre_ping": True}
+    kwargs: dict = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
     if str(url).startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
+    elif str(url).startswith(("postgresql://", "postgresql+psycopg://")):
+        kwargs["connect_args"] = {"connect_timeout": 10}
     return create_engine(url, **kwargs)
 
 

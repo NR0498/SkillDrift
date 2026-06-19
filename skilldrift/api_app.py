@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from skilldrift.config import get_settings
@@ -19,11 +22,19 @@ from skilldrift.search import SearchUnavailable, SolrSearch
 settings = get_settings()
 configure_logging(settings.log_level)
 logger = logging.getLogger(__name__)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    initialize_databases(settings)
+    bundled_read_only = (
+        bool(os.getenv("VERCEL"))
+        and not settings.database_url
+        and settings.jobs_db_path.is_file()
+        and settings.trends_db_path.is_file()
+    )
+    if not bundled_read_only:
+        initialize_databases(settings)
     yield
 
 
@@ -52,8 +63,18 @@ def get_search() -> SolrSearch:
 
 
 @app.get("/", include_in_schema=False)
-def root() -> dict[str, str]:
-    return {"name": "SkillDrift API", "docs": "/docs", "health": "/health"}
+def root() -> FileResponse:
+    return FileResponse(PROJECT_ROOT / "index.html", media_type="text/html")
+
+
+@app.get("/styles.css", include_in_schema=False)
+def styles() -> FileResponse:
+    return FileResponse(PROJECT_ROOT / "styles.css", media_type="text/css")
+
+
+@app.get("/app.js", include_in_schema=False)
+def javascript() -> FileResponse:
+    return FileResponse(PROJECT_ROOT / "app.js", media_type="application/javascript")
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -68,6 +89,17 @@ def health(
         database="ok" if database_ok else "unavailable",
         search="ok" if search_ok else "unavailable",
     )
+
+
+@app.get("/stats")
+def dataset_stats(
+    repository: Annotated[TrendRepository, Depends(get_repository)],
+) -> dict:
+    try:
+        return repository.dataset_stats()
+    except SQLAlchemyError as exc:
+        logger.exception("Could not load dataset statistics")
+        raise HTTPException(status_code=503, detail="Dataset statistics are unavailable.") from exc
 
 
 @app.get("/skills/trending", response_model=list[SkillSummary])

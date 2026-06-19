@@ -107,12 +107,14 @@ def run_trend_engine(
 
     spark = (
         SparkSession.builder.appName("SkillDrift")
-        .master("local[*]")
+        .master("local[2]")
         .config("spark.driver.memory", "2g")
+        .config("spark.sql.shuffle.partitions", "2")
         .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.ui.showConsoleProgress", "false")
         .getOrCreate()
     )
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("ERROR")
     try:
         frame = spark.createDataFrame(jobs)
         searchable = F.concat_ws(
@@ -121,27 +123,24 @@ def run_trend_engine(
             F.coalesce(F.col("tags"), F.lit("")),
             F.coalesce(F.col("description"), F.lit("")),
         )
-        totals = frame.groupBy("snapshot_date").agg(F.count("*").alias("total_jobs"))
-        results: list[dict[str, Any]] = []
+        aliases = {skill: f"skill_{index}" for index, skill in enumerate(SKILLS)}
+        aggregations = [F.count("*").alias("total_jobs")]
+        aggregations.extend(
+            F.countDistinct(F.when(searchable.rlike(pattern_for(skill)), F.col("id"))).alias(
+                alias
+            )
+            for skill, alias in aliases.items()
+        )
+        rows = frame.groupBy("snapshot_date").agg(*aggregations).orderBy("snapshot_date").collect()
 
-        for skill in SKILLS:
-            counts = (
-                frame.filter(searchable.rlike(pattern_for(skill)))
-                .groupBy("snapshot_date")
-                .agg(F.countDistinct("id").alias("skill_count"))
-            )
-            rows = (
-                totals.join(counts, "snapshot_date", "left")
-                .fillna({"skill_count": 0})
-                .withColumn(
-                    "demand_pct",
-                    F.round(F.col("skill_count") / F.col("total_jobs") * 100, 2),
-                )
-                .orderBy("snapshot_date")
-                .collect()
-            )
+        results: list[dict[str, Any]] = []
+        for skill, alias in aliases.items():
             trend = [
-                {"date": row["snapshot_date"], "pct": float(row["demand_pct"])} for row in rows
+                {
+                    "date": row["snapshot_date"],
+                    "pct": round(float(row[alias]) / float(row["total_jobs"]) * 100, 2),
+                }
+                for row in rows
             ]
             drift = round(trend[-1]["pct"] - trend[0]["pct"], 2) if len(trend) > 1 else 0.0
             results.append(

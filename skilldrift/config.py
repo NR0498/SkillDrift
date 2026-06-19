@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 
@@ -31,6 +33,9 @@ class Settings(BaseSettings):
     s3_bucket: str = "skilldrift-output"
     aws_endpoint_url: str | None = "http://localhost:4566"
     aws_region: str = "us-east-1"
+    aws_access_key_id: str | None = "test"
+    aws_secret_access_key: str | None = "test"
+    aws_session_token: str | None = None
 
     @property
     def allowed_origins(self) -> list[str]:
@@ -55,5 +60,15 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
+    if os.getenv("VERCEL") and not settings.database_url:
+        bundled_jobs = Path("data/jobs.db")
+        bundled_trends = Path("data/trends.db")
+        if bundled_jobs.is_file() and bundled_trends.is_file():
+            settings.jobs_db_path = bundled_jobs
+            settings.trends_db_path = bundled_trends
+        else:
+            runtime_data_dir = Path(tempfile.gettempdir()) / "skilldrift"
+            settings.jobs_db_path = runtime_data_dir / "jobs.db"
+            settings.trends_db_path = runtime_data_dir / "trends.db"
     settings.ensure_local_directories()
     return settings

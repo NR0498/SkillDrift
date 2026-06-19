@@ -1,0 +1,13 @@
+.vercel
+.env*
+.venv
+.tools
+__pycache__
+**/__pycache__
+.pytest_cache
+.ruff_cache
+output
+spark.err.txt
+spark.out.txt
+!data/jobs.db
+!data/trends.db

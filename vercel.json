@@ -1,11 +1,19 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/skills/:path*", "destination": "/api" },
-    { "source": "/search", "destination": "/api" },
-    { "source": "/health", "destination": "/api" },
-    { "source": "/docs", "destination": "/api" },
-    { "source": "/openapi.json", "destination": "/api" }
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
   ]
 }

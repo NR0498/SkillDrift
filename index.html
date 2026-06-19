@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="See which technology skills are gaining or losing demand in live job postings.">
+  <title>SkillDrift</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark">SD</div>
+        <div>
+          <div class="brand-name">SkillDrift</div>
+          <div class="brand-tagline">Plain-language skill demand tracker</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="pill" id="health-pill" aria-live="polite">Checking data source...</div>
+        <button class="ghost-button" id="settings-button" type="button">Connect data source</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">What is changing in the job market</p>
+          <h1>See which skills are rising, which are slowing down, and what jobs mention them.</h1>
+          <p class="hero-text">
+            SkillDrift turns job posting data into a simple dashboard. You can search for a skill in plain English,
+            compare demand trends, and quickly understand whether a skill is appearing more often or less often.
+          </p>
+
+          <form class="search-card" id="search-form" role="search">
+            <label class="search-label" for="query">Search by skill, role, or keyword</label>
+            <div class="search-row">
+              <input id="query" name="query" type="search" minlength="2" maxlength="200" required
+                placeholder="Try Python, React, data analyst, or Kubernetes">
+              <button id="search-button" type="submit">Search</button>
+            </div>
+            <div class="suggestions" aria-label="Quick search examples">
+              <button type="button" class="suggestion" data-query="python">Python</button>
+              <button type="button" class="suggestion" data-query="react">React</button>
+              <button type="button" class="suggestion" data-query="aws">AWS</button>
+              <button type="button" class="suggestion" data-query="machine learning">Machine learning</button>
+            </div>
+          </form>
+        </div>
+
+        <aside class="hero-side">
+          <div class="stat-grid" id="stat-grid">
+            <article class="stat-card">
+              <div class="stat-label">Snapshot records</div>
+              <div class="stat-value" id="total-records">--</div>
+              <div class="stat-help">All job rows across every tracked date.</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label">Distinct jobs</div>
+              <div class="stat-value" id="distinct-jobs">--</div>
+              <div class="stat-help">Unique real jobs in the current dataset.</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label">Tracked skills</div>
+              <div class="stat-value" id="tracked-skills">--</div>
+              <div class="stat-help">Technology skills analyzed per snapshot.</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label">Rising skills</div>
+              <div class="stat-value positive" id="rising-skills">--</div>
+              <div class="stat-help">Showing up more often in recent job posts.</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label">Declining skills</div>
+              <div class="stat-value negative" id="declining-skills">--</div>
+              <div class="stat-help">Appearing less often than before.</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label">Data freshness</div>
+              <div class="stat-value" id="freshness-value">--</div>
+              <div class="stat-help" id="freshness-label">Waiting for data...</div>
+            </article>
+          </div>
+
+          <div class="plain-language panel-soft">
+            <div class="plain-title">How to read this</div>
+            <p id="plain-language-copy">
+              Rising means the skill is appearing in more jobs. Declining means it is appearing in fewer jobs.
+              Stable means there is no clear change yet.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Current market signal</p>
+            <h2>Skills worth watching</h2>
+          </div>
+          <p class="section-note" id="trend-note">Loading the latest trend run...</p>
+        </div>
+        <div class="trend-grid" id="trend-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Search results</p>
+            <h2>Jobs that match your search</h2>
+          </div>
+          <p class="section-note" id="result-count">Search for a skill or role to see matching jobs.</p>
+        </div>
+        <div id="search-state" class="empty-state panel-soft">
+          Use the search box above to see recent jobs in plain language.
+        </div>
+        <div class="results-grid" id="results-grid" hidden></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Beginner help</p>
+            <h2>What this dashboard tells you</h2>
+          </div>
+        </div>
+        <div class="info-grid">
+          <article class="info-card">
+            <h3>For job seekers</h3>
+            <p>Use the search box to check whether a skill is being asked for more often now or less often than before.</p>
+          </article>
+          <article class="info-card">
+            <h3>For career changers</h3>
+            <p>Look for skills that are stable or rising so you can focus your learning time where demand is stronger.</p>
+          </article>
+          <article class="info-card">
+            <h3>For hiring teams</h3>
+            <p>Compare skill names and spot shifts in the language used in job posts before they become obvious.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="settings-dialog" id="settings-dialog">
+    <form method="dialog" class="settings-panel" id="settings-form">
+      <div class="settings-header">
+        <div>
+          <p class="section-kicker">Connection</p>
+          <h2>Connect the data source</h2>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Close settings" type="submit">×</button>
+      </div>
+
+      <p class="settings-copy">
+        Paste the API address that serves the SkillDrift data. If you leave this blank, the dashboard will fall
+        back to demo data so it still looks polished on Vercel or any static host.
+      </p>
+
+      <label class="search-label" for="api-base">API base URL</label>
+      <input id="api-base" name="apiBase" type="url" placeholder="https://api.example.com" autocomplete="off">
+
+      <div class="settings-actions">
+        <button type="button" class="secondary-button" id="reset-api">Use local default</button>
+        <button type="submit" class="primary-button">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    window.SKILLDRIFT_DEMO = {
+      trends: [
+        { skill: "python", drift: 1.26, current_pct: 4.82, snapshots: 7, status: "rising" },
+        { skill: "react", drift: 0.54, current_pct: 3.21, snapshots: 7, status: "rising" },
+        { skill: "aws", drift: 0.33, current_pct: 2.48, snapshots: 7, status: "rising" },
+        { skill: "sql", drift: -0.12, current_pct: 3.95, snapshots: 7, status: "stable" },
+        { skill: "docker", drift: -0.44, current_pct: 1.71, snapshots: 7, status: "declining" },
+        { skill: "kubernetes", drift: -0.78, current_pct: 1.22, snapshots: 7, status: "declining" }
+      ],
+      jobs: [
+        {
+          id: "demo-1",
+          title: "Senior Python Engineer",
+          company: "Aurora Labs",
+          tags: ["Python", "FastAPI", "PostgreSQL"],
+          description: "Build internal tools, improve APIs, and ship clean automation for operations teams.",
+          source_url: "https://example.com"
+        },
+        {
+          id: "demo-2",
+          title: "Frontend Developer",
+          company: "Northstar",
+          tags: ["React", "TypeScript", "Design Systems"],
+          description: "Create responsive customer experiences and turn product ideas into polished UI.",
+          source_url: "https://example.com"
+        },
+        {
+          id: "demo-3",
+          title: "Cloud Platform Engineer",
+          company: "Helio Systems",
+          tags: ["AWS", "Docker", "Kubernetes"],
+          description: "Operate deployment pipelines, keep services healthy, and support release automation.",
+          source_url: "https://example.com"
+        }
+      ]
+    };
+  </script>
+  <script src="/app.js" defer></script>
+</body>
+</html>

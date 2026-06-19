@@ -1,3 +1,9 @@
+
+
+
+
+
+
 # SkillDrift
 
 SkillDrift tracks whether technology skills are gaining or losing demand across job
@@ -19,11 +25,12 @@ job_snapshots (SQLite locally / Neon PostgreSQL in production)
 
 The deployable system is intentionally split:
 
-- Vercel hosts the static dashboard and lightweight FastAPI read API.
+- Vercel hosts the static dashboard.
+- The read API can run locally, on a VM, or behind another host you control.
 - PySpark, ingestion, and Solr indexing run as scheduled jobs (GitHub Actions,
   a VM, ECS, Kubernetes, or another worker platform).
-- Solr must be hosted somewhere reachable by the Vercel function. `localhost`
-  only works for local development.
+- Solr must be hosted somewhere reachable by the API. `localhost` only works
+  for local development.
 - SQLite is the zero-configuration local store. Neon PostgreSQL is the production
   database path because a Vercel filesystem is ephemeral.
 
@@ -60,7 +67,7 @@ Start the API and dashboard in separate terminals:
 
 ```powershell
 .\.venv\Scripts\uvicorn api:app --reload --port 8000
-.\.venv\Scripts\python -m http.server 3000 --directory public
+.\.venv\Scripts\python -m http.server 3000
 ```
 
 Open:
@@ -68,6 +75,9 @@ Open:
 - Dashboard: <http://localhost:3000>
 - API docs: <http://localhost:8000/docs>
 - Solr admin: <http://localhost:8983/solr/#/jobs_core>
+
+The dashboard has a built-in demo mode and a connection dialog. If the API is
+unavailable, it still renders helpful sample content so the page remains usable.
 
 The full local sequence is also available as:
 
@@ -166,8 +176,9 @@ AWS_REGION=<region>
 S3_BUCKET=<bucket>
 ```
 
-The dashboard uses same-origin API calls in production and
-`http://localhost:8000` during local development.
+Deploy the static dashboard from the repository root. If your API is hosted
+elsewhere, open the dashboard settings and paste the API base URL once. The
+value is stored in the browser so non-technical users do not need to touch code.
 
 Vercel does not host the persistent Spark, Solr, or scheduled-worker layer. A
 production portfolio deployment therefore needs a public Solr service or VM and
@@ -207,4 +218,3 @@ curl "http://localhost:8000/search?q=python"
 - Simulated history is for UI and pipeline demonstration only.
 - For stronger market claims, add more data sources and replace first-vs-last drift
   with a regression slope plus confidence/error metrics.
-

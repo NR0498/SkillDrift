@@ -11,9 +11,14 @@ htmlcov/
 data/*.db
 data/*.db-*
 data/*.sqlite*
+!data/jobs.db
+!data/trends.db
 output/
 .idea/
 .vscode/
 .DS_Store
 .vercel/
+.tools/
 
+.vercel
+.env*
