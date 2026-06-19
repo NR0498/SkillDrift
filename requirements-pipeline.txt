@@ -1,0 +1,6 @@
+-r requirements.txt
+pandas>=2.2,<3
+pyarrow>=17,<20
+pysolr>=3.10,<4
+pyspark==3.5.5
+

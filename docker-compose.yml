@@ -1,0 +1,35 @@
+services:
+  solr:
+    image: solr:9.8
+    container_name: skilldrift-solr
+    command: solr-precreate jobs_core
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr-data:/var/solr
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8983/solr/jobs_core/admin/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  localstack:
+    image: localstack/localstack:4.6
+    container_name: skilldrift-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+    volumes:
+      - localstack-data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  solr-data:
+  localstack-data:
+
